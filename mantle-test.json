@@ -1,0 +1,13 @@
+{
+  "model": "zai.glm-4.7-flash",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an AI internship and job description analyzer."
+    },
+    {
+      "role": "user",
+      "content": "Analyze this job description and return ONLY valid JSON with these fields: company, role, location, deadline, skills, documents. Job description: Google is hiring Software Engineering Interns in Bangalore. The intern will work on web applications and backend services. Candidates should have experience with JavaScript, React, Node.js, Python, Git and REST APIs. Applicants should submit a resume and portfolio. Application deadline: September 30, 2026."
+    }
+  ]
+}
