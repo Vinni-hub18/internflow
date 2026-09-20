@@ -342,6 +342,21 @@ const statusConfig = {
   },
 };
 
+// Notification date formatter
+const formatNotificationDate = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [userProfile, setUserProfile] = useState(null);
@@ -611,19 +626,6 @@ for (let day = 1; day <= calendarDays; day++) {
   calendarCells.push(day);
 }
 
-const formatNotificationDate = (dateValue) => {
-  if (!dateValue) return "";
-
-  const date = new Date(`${dateValue}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
 
 
   // REAL NOTIFICATIONS
