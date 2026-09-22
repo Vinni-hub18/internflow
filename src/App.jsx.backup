@@ -2987,26 +2987,21 @@ const addAIApplication = async () => {
       {/* AI JOB DESCRIPTION MODAL */}
       {showAIModal && (
         <div
-          className="modal-backdrop ai-modal-backdrop"
+          className="modal-backdrop"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setShowAIModal(false);
             }
           }}
         >
-          <div
-            className="modal ai-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ai-analyzer-title"
-          >
+          <div className="modal">
             <div className="modal-header">
               <div>
                 <div className="modal-icon">
                   <Sparkles size={20} />
                 </div>
 
-                <h3 id="ai-analyzer-title">AI Job Description Analyzer</h3>
+                <h3>AI Job Description Analyzer</h3>
 
                 <p>
                   Paste a job description and let AI extract the important details.
