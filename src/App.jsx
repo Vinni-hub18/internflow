@@ -33,116 +33,40 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import "./App.css";
 import SettingsPage from "./pages/SettingsPage";
 
-const initialApplications = [
-  {
-    id: 1,
-    company: "Amazon",
-    role: "Software Development Engineer Intern",
-    location: "Bangalore",
-    status: "Interview",
-    date: "Sep 22",
-    deadline: "Sep 25",
-    logo: "A",
-    color: "orange",
-  },
-  {
-    id: 2,
-    company: "Google",
-    role: "Software Engineering Intern",
-    location: "Bangalore",
-    status: "Assessment",
-    date: "Sep 24",
-    deadline: "Sep 28",
-    logo: "G",
-    color: "blue",
-  },
-  {
-    id: 3,
-    company: "Microsoft",
-    role: "Software Engineer Intern",
-    location: "Hyderabad",
-    status: "Applied",
-    date: "Sep 18",
-    deadline: "Oct 02",
-    logo: "M",
-    color: "green",
-  },
-  {
-    id: 4,
-    company: "Infosys",
-    role: "Full Stack Developer Intern",
-    location: "Pune",
-    status: "Follow-up",
-    date: "Sep 12",
-    deadline: "Sep 20",
-    logo: "I",
-    color: "purple",
-  },
-  {
-    id: 5,
-    company: "Wipro",
-    role: "Cloud Engineering Intern",
-    location: "Chennai",
-    status: "Applied",
-    date: "Sep 10",
-    deadline: "Sep 30",
-    logo: "W",
-    color: "pink",
-  },
-];
-
 const client = generateClient();
 
-const seedApplications = [
-  {
-    company: "Amazon",
-    role: "Software Development Engineer Intern",
-    location: "Bangalore",
-    status: "Interview",
-    applicationDate: "2026-09-18",
-    deadline: "2026-09-25",
-    interviewDate: "2026-09-22",
-    companyLogo: "A",
-  },
-  {
-    company: "Google",
-    role: "Software Engineering Intern",
-    location: "Bangalore",
-    status: "Assessment",
-    applicationDate: "2026-09-18",
-    deadline: "2026-09-28",
-    assessmentDate: "2026-09-24",
-    companyLogo: "G",
-  },
-  {
-    company: "Microsoft",
-    role: "Software Engineer Intern",
-    location: "Hyderabad",
-    status: "Applied",
-    applicationDate: "2026-09-18",
-    deadline: "2026-10-02",
-    companyLogo: "M",
-  },
-  {
-    company: "Infosys",
-    role: "Full Stack Developer Intern",
-    location: "Pune",
-    status: "Follow-up",
-    applicationDate: "2026-09-12",
-    deadline: "2026-09-20",
-    followUpDate: "2026-09-20",
-    companyLogo: "I",
-  },
-  {
-    company: "Wipro",
-    role: "Cloud Engineering Intern",
-    location: "Chennai",
-    status: "Applied",
-    applicationDate: "2026-09-10",
-    deadline: "2026-09-30",
-    companyLogo: "W",
-  },
-];
+const getGreeting = (date = new Date()) => {
+  const hour = date.getHours();
+
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  if (hour < 21) return "Good evening";
+  return "Good night";
+};
+
+const getTodayLabel = (date = new Date()) => {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatUpcomingDate = (dateValue) => {
+  if (!dateValue) return "";
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date
+    .toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+    })
+    .toUpperCase();
+};
 
 const logoColors = ["orange", "blue", "green", "purple", "pink"];
 
@@ -315,6 +239,65 @@ const getApplicationWorkflow = (application) => {
   };
 };
 
+const getApplicationTimeline = (application) => {
+  if (!application) return [];
+
+  const stages = [
+    {
+      key: "Applied",
+      label: "Application submitted",
+      date: application.applicationDate,
+    },
+    {
+      key: "Assessment",
+      label: "Assessment",
+      date: application.assessmentDate,
+    },
+    {
+      key: "Interview",
+      label: "Interview",
+      date: application.interviewDate,
+    },
+    {
+      key: "Follow-up",
+      label: "Follow-up",
+      date: application.followUpDate,
+    },
+    {
+      key: "Offer",
+      label: "Offer",
+      date: "",
+    },
+  ];
+
+  const currentStatus = application.status || "Applied";
+
+  const currentIndex = workflowStages.indexOf(currentStatus);
+
+  return stages.map((stage, index) => {
+    let state = "upcoming";
+
+    if (currentStatus === "Rejected") {
+      state = "closed";
+    } else if (currentStatus === "Offer") {
+      state = "completed";
+    } else if (index < currentIndex) {
+      state = "completed";
+    } else if (index === currentIndex) {
+      state = "current";
+    }
+
+    return {
+      ...stage,
+      state,
+      formattedDate: stage.date
+        ? formatNotificationDate(stage.date)
+        : "",
+    };
+  });
+};
+
+
 const statusConfig = {
   Applied: {
     className: "status-applied",
@@ -362,6 +345,16 @@ function App() {
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60 * 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   const [calendarMonth, setCalendarMonth] = useState(
   new Date().getMonth()
 );
@@ -466,7 +459,7 @@ const nextMonth = () => {
   return () => {
     cancelled = true;
   };
-}, []);
+}, [activePage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -488,38 +481,6 @@ const loadApplications = async () => {
     if (cancelled) return;
 
     let records = data || [];
-
-        // Keep the current demo experience by migrating the existing five
-        // dashboard examples into DynamoDB once for this browser/user.
-        const demoSeeded = localStorage.getItem("internflow-demo-seeded");
-
-        if (records.length === 0 && !demoSeeded) {
-          const created = await Promise.all(
-            seedApplications.map((item) =>
-              client.models.InternshipApplication.create(item)
-            )
-          );
-
-          const createErrors = created.flatMap((result) => result.errors || []);
-          if (createErrors.length) {
-            throw new Error(
-              createErrors.map((item) => item.message).join("\n")
-            );
-          }
-
-          localStorage.setItem("internflow-demo-seeded", "true");
-
-          const refreshed =
-            await client.models.InternshipApplication.list();
-
-          if (refreshed.errors?.length) {
-            throw new Error(
-              refreshed.errors.map((item) => item.message).join("\n")
-            );
-          }
-
-          records = refreshed.data || [];
-        }
 
         setApplications(records.map((app, index) => toUiApplication(app, index)));
       } catch (err) {
@@ -862,6 +823,233 @@ useEffect(() => {
   applications,
   browserNotificationPermission,
 ]);
+
+  const upcomingDashboardEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const events = [];
+
+    applications.forEach((application) => {
+      if (["Offer", "Rejected"].includes(application.status)) {
+        return;
+      }
+
+      const addEvent = (date, type, label) => {
+        if (!date) return;
+
+        const eventDate = new Date(`${date}T00:00:00`);
+
+        if (Number.isNaN(eventDate.getTime())) return;
+
+        if (eventDate >= today) {
+          events.push({
+            id: `${application.id}-${type}`,
+            applicationId: application.id,
+            date,
+            type,
+            label,
+            company: application.company,
+            role: application.role,
+          });
+        }
+      };
+
+      addEvent(application.interviewDate, "purple", "Interview");
+      addEvent(application.assessmentDate, "blue", "Assessment");
+      addEvent(application.followUpDate, "danger", "Follow-up");
+      addEvent(application.deadlineValue, "danger", "Deadline");
+    });
+
+    return events
+      .sort(
+        (a, b) =>
+          new Date(`${a.date}T00:00:00`) -
+          new Date(`${b.date}T00:00:00`)
+      )
+      .slice(0, 3);
+  }, [applications]);
+
+  const applicationsThisWeek = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const day = today.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - diff);
+
+    return applications.filter((application) => {
+      if (!application.applicationDate) return false;
+
+      const applicationDate = new Date(
+        `${application.applicationDate}T00:00:00`
+      );
+
+      return (
+        !Number.isNaN(applicationDate.getTime()) &&
+        applicationDate >= startOfWeek &&
+        applicationDate <= today
+      );
+    }).length;
+  }, [applications]);
+
+    // NEEDS YOUR ATTENTION
+  const attentionItems = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const getDaysFromToday = (dateValue) => {
+      if (!dateValue) return null;
+
+      const date = new Date(`${dateValue}T00:00:00`);
+
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+
+      date.setHours(0, 0, 0, 0);
+
+      return Math.round(
+        (date.getTime() - today.getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+    };
+
+    const items = [];
+
+    applications.forEach((application) => {
+      // Completed applications don't need attention.
+      if (
+        application.status === "Offer" ||
+        application.status === "Rejected"
+      ) {
+        return;
+      }
+
+      const addAttention = ({
+        date,
+        type,
+        title,
+        description,
+        priority,
+      }) => {
+        if (!date) return;
+
+        items.push({
+          id: `${application.id}-${type}`,
+          applicationId: application.id,
+          company: application.company,
+          role: application.role,
+          date,
+          type,
+          title,
+          description,
+          priority,
+        });
+      };
+
+      // FOLLOW-UP
+      const followUpDays = getDaysFromToday(
+        application.followUpDate
+      );
+
+      if (followUpDays !== null && followUpDays <= 0) {
+        addAttention({
+          date: application.followUpDate,
+          type: "followup",
+          title:
+            followUpDays === 0
+              ? "Follow-up due today"
+              : "Follow-up overdue",
+          description:
+            followUpDays === 0
+              ? "Send or record your follow-up."
+              : `Overdue by ${Math.abs(followUpDays)} day${
+                  Math.abs(followUpDays) === 1 ? "" : "s"
+                }.`,
+          priority: 1,
+        });
+      }
+
+      // INTERVIEW
+      const interviewDays = getDaysFromToday(
+        application.interviewDate
+      );
+
+      if (
+        interviewDays !== null &&
+        interviewDays >= 0 &&
+        interviewDays <= 2
+      ) {
+        addAttention({
+          date: application.interviewDate,
+          type: "interview",
+          title:
+            interviewDays === 0
+              ? "Interview today"
+              : interviewDays === 1
+              ? "Interview tomorrow"
+              : "Interview in 2 days",
+          description: "Prepare for your interview.",
+          priority: 2,
+        });
+      }
+
+      // ASSESSMENT
+      const assessmentDays = getDaysFromToday(
+        application.assessmentDate
+      );
+
+      if (
+        assessmentDays !== null &&
+        assessmentDays >= 0 &&
+        assessmentDays <= 2
+      ) {
+        addAttention({
+          date: application.assessmentDate,
+          type: "assessment",
+          title:
+            assessmentDays === 0
+              ? "Assessment today"
+              : assessmentDays === 1
+              ? "Assessment tomorrow"
+              : "Assessment in 2 days",
+          description: "Complete the assessment on time.",
+          priority: 3,
+        });
+      }
+
+      // DEADLINE
+      const deadlineDays = getDaysFromToday(
+        application.deadlineValue
+      );
+
+      if (
+        deadlineDays !== null &&
+        deadlineDays >= 0 &&
+        deadlineDays <= 3
+      ) {
+        addAttention({
+          date: application.deadlineValue,
+          type: "deadline",
+          title:
+            deadlineDays === 0
+              ? "Application deadline today"
+              : deadlineDays === 1
+              ? "Application deadline tomorrow"
+              : `Application deadline in ${deadlineDays} days`,
+          description: "Review the application before the deadline.",
+          priority: 4,
+        });
+      }
+    });
+
+    return items
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 5);
+  }, [applications]);
 
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
@@ -1802,10 +1990,14 @@ const addAIApplication = async () => {
 
       <div className="welcome-row">
             <div>
-              <p className="eyebrow">Saturday, September 19, 2026</p>
+              <p className="eyebrow">{getTodayLabel(currentTime)}</p>
 
               <h2>
-                Good morning, Vinayaka <span>👋</span>
+                {getGreeting(currentTime)}, {
+                  profileLoading
+                    ? "..."
+                    : userProfile?.fullName || "there"
+                }
               </h2>
 
               <p className="welcome-text">
@@ -1846,7 +2038,11 @@ const addAIApplication = async () => {
   <StatCard
     label="Total Applications"
     value={stats.total}
-    change="+3 this week"
+    change={
+      applicationsThisWeek > 0
+        ? `+${applicationsThisWeek} this week`
+        : "No new applications this week"
+    }
     icon={<BriefcaseBusiness size={20} />}
     type="blue"
     onClick={() => {
@@ -1891,6 +2087,91 @@ const addAIApplication = async () => {
     }}
   />
 </section>
+
+          {/* NEEDS YOUR ATTENTION */}
+          <section className="panel attention-panel">
+            <div className="panel-header">
+              <div>
+                <h3>Needs Your Attention</h3>
+                <p>
+                  Important actions based on your current applications.
+                </p>
+              </div>
+
+              <div className="attention-count">
+                {attentionItems.length}
+              </div>
+            </div>
+
+            {attentionItems.length === 0 ? (
+              <div className="attention-empty">
+                <CheckCircle2 size={26} />
+
+                <div>
+                  <strong>You're all caught up</strong>
+                  <p>
+                    No urgent interviews, assessments,
+                    follow-ups or deadlines right now.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="attention-list">
+                {attentionItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`attention-item attention-${item.type}`}
+                    onClick={() => {
+                      const application =
+                        applications.find(
+                          (application) =>
+                            application.id === item.applicationId
+                        );
+
+                      if (application) {
+                        setSelectedApplication(application);
+                      }
+                    }}
+                  >
+                    <div className="attention-icon">
+                      {item.type === "interview" && (
+                        <CalendarDays size={18} />
+                      )}
+
+                      {item.type === "assessment" && (
+                        <Clock3 size={18} />
+                      )}
+
+                      {item.type === "followup" && (
+                        <CircleAlert size={18} />
+                      )}
+
+                      {item.type === "deadline" && (
+                        <Target size={18} />
+                      )}
+                    </div>
+
+                    <div className="attention-content">
+                      <strong>{item.title}</strong>
+
+                      <span>
+                        {item.company} • {item.role}
+                      </span>
+
+                      <small>{item.description}</small>
+                    </div>
+
+                    <ArrowUpRight
+                      size={17}
+                      className="attention-arrow"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
 
           {/* MAIN GRID */}
           <div className="dashboard-grid">
@@ -1968,6 +2249,72 @@ const addAIApplication = async () => {
             {selectedApplication.deadline ||
               "No deadline"}
           </strong>
+        </div>
+      </div>
+
+            {/* APPLICATION TIMELINE */}
+      <div className="application-timeline-section">
+        <div className="timeline-heading">
+          <div>
+            <span className="modal-eyebrow">
+              APPLICATION JOURNEY
+            </span>
+
+            <h3>Application Timeline</h3>
+          </div>
+
+          <span className="timeline-status">
+            {selectedApplication.status || "Applied"}
+          </span>
+        </div>
+
+        <div className="application-timeline">
+          {getApplicationTimeline(selectedApplication).map(
+            (stage, index) => (
+              <div
+                key={stage.key}
+                className={`timeline-step ${stage.state}`}
+              >
+                <div className="timeline-marker">
+                  {stage.state === "completed" ? (
+                    <CheckCircle2 size={16} />
+                  ) : stage.state === "current" ? (
+                    <CircleDot size={16} />
+                  ) : stage.state === "closed" ? (
+                    <X size={16} />
+                  ) : (
+                    <CircleDot size={13} />
+                  )}
+                </div>
+
+                {index <
+                  getApplicationTimeline(
+                    selectedApplication
+                  ).length -
+                    1 && (
+                  <div className="timeline-line" />
+                )}
+
+                <div className="timeline-content">
+                  <strong>{stage.key}</strong>
+
+                  <span>{stage.label}</span>
+
+                  {stage.formattedDate ? (
+                    <small>
+                      {stage.formattedDate}
+                    </small>
+                  ) : stage.state === "current" ? (
+                    <small>In progress</small>
+                  ) : stage.state === "closed" ? (
+                    <small>Application closed</small>
+                  ) : (
+                    <small>Upcoming</small>
+                  )}
+                </div>
+              </div>
+            )
+          )}
         </div>
       </div>
 
@@ -2125,59 +2472,35 @@ const addAIApplication = async () => {
                 </div>
 
                 <div className="upcoming-list">
-                  <UpcomingItem
-  date="SEP 20"
-  title="Follow up with Infosys"
-  subtitle="Full Stack Developer Intern"
-  type="danger"
-  onClick={() => {
-    const application =
-      applications.find(
-        (item) =>
-          item.company === "Infosys"
-      );
+                  {upcomingDashboardEvents.length === 0 ? (
+                    <div className="empty-state">
+                      <CalendarDays size={28} />
+                      <h4>No upcoming actions</h4>
+                      <p>
+                        Your upcoming interviews, assessments, deadlines
+                        and follow-ups will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    upcomingDashboardEvents.map((event) => (
+                      <UpcomingItem
+                        key={event.id}
+                        date={formatUpcomingDate(event.date)}
+                        title={`${event.label} — ${event.company}`}
+                        subtitle={event.role}
+                        type={event.type}
+                        onClick={() => {
+                          const application = applications.find(
+                            (item) => item.id === event.applicationId
+                          );
 
-    if (application) {
-      setSelectedApplication(application);
-    }
-  }}
-/>
-
-<UpcomingItem
-  date="SEP 22"
-  title="Amazon interview"
-  subtitle="SDE Intern • 10:30 AM"
-  type="purple"
-  onClick={() => {
-    const application =
-      applications.find(
-        (item) =>
-          item.company === "Amazon"
-      );
-
-    if (application) {
-      setSelectedApplication(application);
-    }
-  }}
-/>
-
-<UpcomingItem
-  date="SEP 24"
-  title="Google assessment"
-  subtitle="Software Engineering Intern"
-  type="blue"
-  onClick={() => {
-    const application =
-      applications.find(
-        (item) =>
-          item.company === "Google"
-      );
-
-    if (application) {
-      setSelectedApplication(application);
-    }
-  }}
-/>
+                          if (application) {
+                            setSelectedApplication(application);
+                          }
+                        }}
+                      />
+                    ))
+                  )}
                 </div>
               </section>
 
